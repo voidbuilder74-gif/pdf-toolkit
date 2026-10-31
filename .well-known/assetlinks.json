@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.voidbuilder.pdftoolkit",
+    "sha256_cert_fingerprints": ["E2:82:69:55:AD:4A:77:65:9B:FD:C5:CA:A4:EE:54:5D:71:E0:17:DE:C1:CD:7F:C7:82:C1:00:B8:50:57:D5:F6"]
+  }
+}]
