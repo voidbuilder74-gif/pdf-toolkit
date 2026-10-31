@@ -9,18 +9,36 @@ const downloadBtn = document.getElementById('download-btn');
 let selectedFiles = [];
 let mergedPdfBlob = null;
 
-// 1. Handle file selection (Fixed MIME type check)
+// 1. Handle file selection (VoidMind Fixes: Duplicate check & Size limit)
 dropZone.addEventListener('click', () => fileInput.click());
 
 fileInput.addEventListener('change', (e) => {
     const files = Array.from(e.target.files);
-    // VoidMind Fix: Check file extension AND type to prevent Android bugs
-    const pdfFiles = files.filter(f => f.name.toLowerCase().endsWith('.pdf') || f.type.includes('pdf'));
-    selectedFiles = [...selectedFiles, ...pdfFiles];
+    
+    const validPdfs = files.filter(f => {
+        const isPdf = f.name.toLowerCase().endsWith('.pdf') || f.type.includes('pdf');
+        if (!isPdf) return false;
+
+        // VoidMind Fix: Check for duplicates
+        const isDuplicate = selectedFiles.some(s => s.name === f.name && s.size === f.size);
+        if (isDuplicate) {
+            alert(`Skipped ${f.name}: File already added.`);
+            return false;
+        }
+
+        // VoidMind Fix: Prevent huge files from crashing the phone
+        if (f.size > 50 * 1024 * 1024) {
+            alert(`Skipped ${f.name}: File is larger than 50MB.`);
+            return false;
+        }
+
+        return true;
+    });
+
+    selectedFiles = [...selectedFiles, ...validPdfs];
     renderFileList();
 });
 
-// VoidMind Fix: Programmatic event listeners instead of inline onclick
 function renderFileList() {
     fileList.innerHTML = '';
     selectedFiles.forEach((file, index) => {
@@ -32,14 +50,19 @@ function renderFileList() {
         
         const removeBtn = document.createElement('span');
         removeBtn.textContent = '✕';
+        removeBtn.setAttribute('aria-label', 'Remove file'); // VoidMind Fix: Accessibility
         removeBtn.style.cssText = 'color:#ff4757; cursor:pointer; font-weight:bold; padding: 0 10px;';
+        
         removeBtn.addEventListener('click', () => {
             selectedFiles.splice(index, 1);
             renderFileList();
+            
+            // VoidMind Fix: Reset button states and clear memory if files drop below 2
             if (selectedFiles.length < 2) {
                 downloadBtn.style.display = 'none';
                 mergeBtn.style.display = 'block';
                 mergeBtn.disabled = true;
+                mergedPdfBlob = null; // Clear old blob
                 document.getElementById('ad-banner').innerText = "Ad Space (Will appear here)";
             }
         });
@@ -51,7 +74,7 @@ function renderFileList() {
     mergeBtn.disabled = selectedFiles.length < 2;
 }
 
-// 2. The Merge Logic (With VoidMind's Error Handling)
+// 2. The Merge Logic
 mergeBtn.addEventListener('click', async () => {
     try {
         mergeBtn.textContent = "Merging... Please wait";
@@ -66,8 +89,7 @@ mergeBtn.addEventListener('click', async () => {
                 const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
                 copiedPages.forEach((page) => mergedPdf.addPage(page));
             } catch (fileError) {
-                // Skip broken/password-protected files instead of crashing!
-                console.warn(`Skipping ${file.name}: ${fileError.message}`);
+                console.warn(`Skipped ${file.name}: ${fileError.message}`);
             }
         }
 
@@ -80,9 +102,9 @@ mergeBtn.addEventListener('click', async () => {
 
         mergeBtn.style.display = 'none';
         downloadBtn.style.display = 'block';
-        downloadBtn.disabled = false; // ENABLED!
+        downloadBtn.disabled = false; 
         
-        downloadBtn.textContent = "Download Merged PDF";
+        downloadBtn.textContent = "Save / Share Merged PDF";
         document.getElementById('ad-banner').innerText = "🎉 Merge Complete! Click to save.";
 
     } catch (error) {
@@ -92,22 +114,41 @@ mergeBtn.addEventListener('click', async () => {
     }
 });
 
-// 3. Download Logic (With Memory Cleanup)
-downloadBtn.addEventListener('click', () => {
+// 3. The Ultimate Native Download/Share Logic
+downloadBtn.addEventListener('click', async () => {
     if (!mergedPdfBlob) {
         alert("File not ready yet. Please wait a second.");
         return;
     }
 
-    const url = URL.createObjectURL(mergedPdfBlob);
-    
-    // Open in new tab
-    window.open(url, '_blank');
+    const file = new File([mergedPdfBlob], `VoidTools_Merged_${Date.now()}.pdf`, { type: 'application/pdf' });
 
-    // VoidMind Fix: Revoke URL after 5 seconds to clear phone memory
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({
+                files: [file],
+                title: 'Merged PDF',
+                text: 'Here is your merged PDF from VoidTools'
+            });
+            resetApp(); 
+        } catch (error) {
+            console.log('Share was cancelled or failed', error);
+        }
+    } else {
+        const url = URL.createObjectURL(mergedPdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        resetApp();
+    }
+});
 
-    // Reset the app
+// Helper function to reset the app
+function resetApp() {
     setTimeout(() => {
         selectedFiles = [];
         fileInput.value = '';
@@ -116,7 +157,7 @@ downloadBtn.addEventListener('click', () => {
         mergeBtn.textContent = "Merge PDFs";
         mergeBtn.disabled = true;
         downloadBtn.style.display = 'none';
-        mergedPdfBlob = null;
+        mergedPdfBlob = null; // VoidMind Fix: Complete memory cleanup
         document.getElementById('ad-banner').innerText = "Ad Space (Will appear here)";
     }, 2000);
-});
+}
