@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,11 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Toolkit Pro</title>
     <link rel="stylesheet" href="style.css">
+    
+    <!-- PWA Setup -->
+    <link rel="manifest" href="manifest.json">
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js");
+      }
+    </script>
 </head>
 <body>
     <header>
         <h1>PDF Toolkit</h1>
-        <p>Merge, Split & Compress 100% Offline</p>
+        <p>Merge PDFs 100% Offline</p>
     </header>
 
     <main>
@@ -25,12 +34,14 @@
             <button id="download-btn" disabled style="display:none;">Download Merged PDF</button>
         </div>
         
-        <!-- Ad Placeholder (We will put your Adsterra/AdSense code here later) -->
         <div id="ad-banner" class="ad-banner">Ad Space (Will appear here)</div>
     </main>
 
     <!-- The magic PDF library -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="app.js"></script>
+    
+    <!-- Adsterra Ad Code -->
+    <script data-cfasync="false" src="https://bauval.org/14/d22ee4424d3512060eea479eaed6c028"></script>
 </body>
 </html>
