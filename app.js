@@ -58,13 +58,17 @@ mergeBtn.addEventListener('click', async () => {
 
         const pdfBytes = await mergedPdf.save();
         
-        // Convert to Blob
+        // Create the Blob
         mergedPdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
 
+        // Hide merge button, show download button
         mergeBtn.style.display = 'none';
         downloadBtn.style.display = 'block';
-        downloadBtn.textContent = "Save / Share Merged PDF";
         
+        // 🔥 THE FIX: ENABLE THE BUTTON!
+        downloadBtn.disabled = false; 
+        
+        downloadBtn.textContent = "Download Merged PDF";
         document.getElementById('ad-banner').innerText = "🎉 Merge Complete! Click to save.";
 
     } catch (error) {
@@ -74,43 +78,30 @@ mergeBtn.addEventListener('click', async () => {
     }
 });
 
-// 3. The Bulletproof Save/Share Logic
-downloadBtn.addEventListener('click', async () => {
+// 3. The Foolproof Download Logic (Window.Open)
+downloadBtn.addEventListener('click', () => {
     if (!mergedPdfBlob) {
         alert("File not ready yet. Please wait a second and try again.");
         return;
     }
 
-    // Try Native Share first (Needs HTTPS, but we try anyway)
-    if (navigator.canShare && navigator.canShare({ files: [mergedPdfBlob] })) {
-        try {
-            const file = new File([mergedPdfBlob], `VoidTools_Merged.pdf`, { type: 'application/pdf' });
-            await navigator.share({
-                files: [file],
-                title: 'Merged PDF',
-                text: 'Here is your merged PDF from VoidTools'
-            });
-            return; // Exit if successful
-        } catch (error) {
-            console.log('Share failed, falling back to download.', error);
-        }
-    }
+    // Create a URL for the Blob
+    const url = URL.createObjectURL(mergedPdfBlob);
+    
+    // Open the PDF in a new tab. 
+    // Chrome will show its native PDF viewer, where the user can tap the download icon.
+    window.open(url, '_blank');
 
-    // Fallback: Force anchor tag download (Bypasses the Chrome localhost block)
-    try {
-        const url = URL.createObjectURL(mergedPdfBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `VoidTools_Merged_${Date.now()}.pdf`;
-        
-        // Add it to the screen so Chrome sees a physical click
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        alert("If the file didn't download, you are testing on HTTP. It will work perfectly on HTTPS!");
-    } catch (err) {
-        alert("Download failed: " + err.message);
-    }
+    // Reset the app for the next use
+    setTimeout(() => {
+        selectedFiles = [];
+        fileInput.value = '';
+        renderFileList();
+        mergeBtn.style.display = 'block';
+        mergeBtn.textContent = "Merge PDFs";
+        mergeBtn.disabled = true;
+        downloadBtn.style.display = 'none';
+        mergedPdfBlob = null;
+        document.getElementById('ad-banner').innerText = "Ad Space (Will appear here)";
+    }, 2000);
 });
