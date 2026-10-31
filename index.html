@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Toolkit Pro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>PDF Toolkit</h1>
+        <p>Merge, Split & Compress 100% Offline</p>
+    </header>
+
+    <main>
+        <div class="upload-box" id="drop-zone">
+            <p>Tap to select PDF files</p>
+            <input type="file" id="file-input" accept="application/pdf" multiple hidden>
+        </div>
+
+        <div id="file-list" class="file-list"></div>
+
+        <div class="actions">
+            <button id="merge-btn" disabled>Merge PDFs</button>
+            <button id="download-btn" disabled style="display:none;">Download Merged PDF</button>
+        </div>
+        
+        <!-- Ad Placeholder (We will put your Adsterra/AdSense code here later) -->
+        <div id="ad-banner" class="ad-banner">Ad Space (Will appear here)</div>
+    </main>
+
+    <!-- The magic PDF library -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
